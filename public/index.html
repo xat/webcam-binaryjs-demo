@@ -1,0 +1,121 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Webcam Binary.JS Demo</title>
+	<script src="http://cdn.binaryjs.com/0/binary.js"></script>
+	<script>
+
+	(function(document) {
+
+		document.addEventListener('DOMContentLoaded', function() {
+
+			var settings = {
+				grabRate			: 100,
+				canvasWidth		: 150,
+				canvasHeight	: 150,
+				socketSrv			: 'ws://node.soped.lan:9000'
+			};
+
+			var senderEl						= document.getElementById('sender');
+			var receiverEl					= document.getElementById('receiver');
+			var videoEl							= document.getElementById('video');
+
+			var senderContext 			= senderEl.getContext('2d');
+			var receiverContext 		= receiverEl.getContext('2d');
+
+			var receiverDataLength	= settings.canvasWidth * settings.canvasHeight * 4;
+			var receiverPos					= 0;
+
+			var client 							= new BinaryClient(settings.socketSrv);
+			var stream;
+
+			var imageFrame					= receiverContext.getImageData(0,0,settings.canvasWidth,settings.canvasHeight);
+
+			senderEl.width 					= settings.canvasWidth;
+			senderEl.height					= settings.canvasHeight;
+
+			receiverEl.width 				= settings.canvasWidth;
+			receiverEl.height				= settings.canvasHeight;
+
+			videoEl.width 					= settings.canvasWidth;
+			videoEl.height					= settings.canvasHeight;
+
+
+			// damn, old browser :-(
+
+			if (!navigator.webkitGetUserMedia) {
+				return false;
+			}
+
+			// the stream is ready
+
+			client.on('open', function(s) {
+
+				stream = client.createStream(s);
+
+				// data coming from the server...
+				// we will draw it into the receiver canvas
+
+				stream.on('data', function(data) {
+
+					// data is from the type 'ArrayBuffer'
+					// we need to build a Uint8Array out of it
+					// to be able to access the actual data
+
+					var dataArr = new Uint8Array(data);
+
+					for (var i=0, len=dataArr.length; i<len; i++) {
+						imageFrame.data[receiverPos] = dataArr[i];
+						receiverPos++;
+						if (receiverPos % receiverDataLength === 0) {
+							receiverPos = 0;
+
+							// actually draw the image data
+
+							receiverContext.putImageData(imageFrame,0,0);
+						}
+					}
+				});
+
+			});
+
+			// gets called in an certain interval and grabs the current video frame
+			// and draws it into a canvas
+
+			var grabLoop = function() {
+				senderContext.drawImage(videoEl,0,0,settings.canvasWidth,settings.canvasHeight);
+				var imageData = senderContext.getImageData(0,0,settings.canvasWidth,settings.canvasHeight);
+				if (typeof stream !== 'undefined') {
+					stream.write(imageData.data);
+				}
+				setTimeout(grabLoop, settings.grabRate);
+			};
+
+			// gets called as soon we have access to the camera..
+
+			var gUsuccess = function(stream) {
+				videoEl.src = window.webkitURL.createObjectURL(stream);
+				videoEl.play();
+				setTimeout(grabLoop, settings.grabRate);
+			};
+
+			// no camera access...
+
+			var gUfail = function() {
+				console.log('no webcam access :-(');
+			};
+
+			navigator.webkitGetUserMedia({video: true}, gUsuccess, gUfail);
+		});
+
+	})(document);
+
+	</script>
+
+</head>
+<body>
+	<canvas id="sender"></canvas>
+	<canvas id="receiver"></canvas>
+	<video id="video"style="display:none;"></video>
+</body>
+</html>
