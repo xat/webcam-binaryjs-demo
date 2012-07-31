@@ -10,35 +10,35 @@
 		document.addEventListener('DOMContentLoaded', function() {
 
 			var settings = {
-				grabRate			: 66.7,
-				canvasWidth		: 200,
-				canvasHeight	: 160,
-				socketSrv			: 'ws://node.soped.lan:9000'
+				grabRate     : 66.7,
+				canvasWidth  : 200,
+				canvasHeight : 160,
+				socketSrv    : 'ws://node.soped.lan:9000'
 			};
 
-			var senderEl						= document.getElementById('sender');
-			var receiverEl					= document.getElementById('receiver');
-			var videoEl							= document.getElementById('video');
+			var senderEl            = document.getElementById('sender');
+			var receiverEl          = document.getElementById('receiver');
+			var videoEl             = document.getElementById('video');
 
-			var senderContext 			= senderEl.getContext('2d');
-			var receiverContext 		= receiverEl.getContext('2d');
+			var senderContext       = senderEl.getContext('2d');
+			var receiverContext     = receiverEl.getContext('2d');
 
-			var receiverDataLength	= settings.canvasWidth * settings.canvasHeight * 4;
-			var receiverPos					= 0;
+			var receiverDataLength  = settings.canvasWidth * settings.canvasHeight * 4;
+			var receiverPos         = 0;
 
-			var client 							= new BinaryClient(settings.socketSrv);
+			var client              = new BinaryClient(settings.socketSrv);
 			var stream;
 
-			var imageFrame					= receiverContext.getImageData(0,0,settings.canvasWidth,settings.canvasHeight);
+			var imageFrame          = receiverContext.getImageData(0,0,settings.canvasWidth,settings.canvasHeight);
 
-			senderEl.width 					= settings.canvasWidth;
-			senderEl.height					= settings.canvasHeight;
+			senderEl.width          = settings.canvasWidth;
+			senderEl.height         = settings.canvasHeight;
 
-			receiverEl.width 				= settings.canvasWidth;
-			receiverEl.height				= settings.canvasHeight;
+			receiverEl.width        = settings.canvasWidth;
+			receiverEl.height       = settings.canvasHeight;
 
-			videoEl.width 					= settings.canvasWidth;
-			videoEl.height					= settings.canvasHeight;
+			videoEl.width           = settings.canvasWidth;
+			videoEl.height          = settings.canvasHeight;
 
 
 			// damn, old browser :-(
