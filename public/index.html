@@ -25,6 +25,7 @@
 
 			var receiverDataLength  = settings.canvasWidth * settings.canvasHeight * 4;
 			var receiverPos         = 0;
+			var transferRate        = Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2);
 
 			var client              = new BinaryClient(settings.socketSrv);
 			var stream;
@@ -47,8 +48,8 @@
 				return false;
 			}
 
-			document.getElementById('message').innerHTML = 'Sending: ' + Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2) + ' KB / Sec<br />';
-			document.getElementById('message').innerHTML += 'Receiving: ' + Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2) + ' KB / Sec';
+			document.getElementById('message').innerHTML = 'Sending: ' + transferRate + ' KB / Sec<br />';
+			document.getElementById('message').innerHTML += 'Receiving: ' + transferRate + ' KB / Sec';
 
 			// the stream is ready
 
