@@ -47,6 +47,9 @@
 				return false;
 			}
 
+			document.getElementById('message').innerHTML = 'Sending: ' + Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2) + ' KB / Sec<br />';
+			document.getElementById('message').innerHTML += 'Receiving: ' + Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2) + ' KB / Sec';
+
 			// the stream is ready
 
 			client.on('open', function(s) {
@@ -116,6 +119,7 @@
 <body>
 	<canvas id="sender"></canvas>
 	<canvas id="receiver"></canvas>
-	<video id="video"style="display:none;"></video>
+	<video id="video" style="display:none;"></video>
+	<div id="message"></div>
 </body>
 </html>

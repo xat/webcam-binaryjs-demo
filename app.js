@@ -7,7 +7,6 @@ var http = require('http')
 
   , binaryServer = BinaryServer({port: 9000});
 
-
 // Serv the static page..
 
 var server = http.createServer(function(request, response) {
