@@ -55,32 +55,35 @@
 
 			client.on('open', function(s) {
 
-				stream = client.createStream(s);
+				stream = client.createStream(s, 'toserver');
 
 				// data coming from the server...
 				// we will draw it into the receiver canvas
+			});
 
-				stream.on('data', function(data) {
+			client.on('stream', function(s, meta) {
 
-					// data is from the type 'ArrayBuffer'
-					// we need to build a Uint8Array out of it
-					// to be able to access the actual data
+				if (meta === 'fromserver') {
+					s.on('data', function(data) {
 
-					var dataArr = new Uint8Array(data);
+						// data is from the type 'ArrayBuffer'
+						// we need to build a Uint8Array out of it
+						// to be able to access the actual data
 
-					for (var i=0, len=dataArr.length; i<len; i++) {
-						imageFrame.data[receiverPos] = dataArr[i];
-						receiverPos++;
-						if (receiverPos % receiverDataLength === 0) {
-							receiverPos = 0;
+						var dataArr = new Uint8Array(data);
 
-							// actually draw the image data
-
-							receiverContext.putImageData(imageFrame,0,0);
+						for (var i=0, len=dataArr.length; i<len; i++) {
+							imageFrame.data[receiverPos] = dataArr[i];
+							receiverPos++;
+							if (receiverPos % receiverDataLength === 0) {
+								receiverPos = 0;
+								receiverContext.putImageData(imageFrame,0,0);
+							}
 						}
-					}
-				});
 
+					});
+
+				}
 			});
 
 			// gets called in an certain interval and grabs the current video frame
@@ -100,6 +103,7 @@
 			var gUsuccess = function(stream) {
 				videoEl.src = window.webkitURL.createObjectURL(stream);
 				videoEl.play();
+				console.log('success');
 				setTimeout(grabLoop, settings.grabRate);
 			};
 

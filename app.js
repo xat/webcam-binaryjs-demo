@@ -24,11 +24,12 @@ binaryServer.on('connection', function(client) {
 
   client.on('stream', function(stream) {
 
-    // Just pipe the data back to the client over the same stream.
-    // Not sure if it would make more sense to create
-    // two separate streams for sending and receiving..
+      var responseStream = client.createStream('fromserver');
 
-    stream.pipe(stream);
+      // pipe didnt work :(
+      stream.on('data', function(data) {
+        responseStream.write(data);
+      });
 
   });
 
