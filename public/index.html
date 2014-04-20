@@ -1,130 +1,133 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-	<title>Webcam Binary.JS Demo</title>
-	<script src="http://cdn.binaryjs.com/0/binary.js"></script>
-	<script>
+    <title>Webcam Binary.JS Demo</title>
+    <script src="http://cdn.binaryjs.com/0/binary.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.7.1/modernizr.min.js"></script>
+    <script>
 
-	(function(document) {
+        (function (document) {
 
-		document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
 
-			var settings = {
-				grabRate     : 66.7,
-				canvasWidth  : 200,
-				canvasHeight : 160,
-				socketSrv    : 'ws://localhost:9000'
-			};
+                var settings = {
+                    grabRate: 66.7,
+                    canvasWidth: 200,
+                    canvasHeight: 160,
+                    socketSrv: 'ws://localhost:9000'
+                };
 
-			var senderEl            = document.getElementById('sender');
-			var receiverEl          = document.getElementById('receiver');
-			var videoEl             = document.getElementById('video');
+                var senderEl = document.getElementById('sender');
+                var receiverEl = document.getElementById('receiver');
+                var videoEl = document.getElementById('video');
 
-			var senderContext       = senderEl.getContext('2d');
-			var receiverContext     = receiverEl.getContext('2d');
+                var senderContext = senderEl.getContext('2d');
+                var receiverContext = receiverEl.getContext('2d');
 
-			var receiverDataLength  = settings.canvasWidth * settings.canvasHeight * 4;
-			var receiverPos         = 0;
-			var transferRate        = Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2);
+                var receiverDataLength = settings.canvasWidth * settings.canvasHeight * 4;
+                var receiverPos = 0;
+                var transferRate = Math.round(((1000 / settings.grabRate) * receiverDataLength / 1024), 2);
 
-			var client              = new BinaryClient(settings.socketSrv);
-			var stream;
+                var client = new BinaryClient(settings.socketSrv);
+                var stream;
 
-			var imageFrame          = receiverContext.getImageData(0,0,settings.canvasWidth,settings.canvasHeight);
+                var imageFrame = receiverContext.getImageData(0, 0, settings.canvasWidth, settings.canvasHeight);
+                var userMedia = Modernizr.prefixed('getUserMedia', navigator);
 
-			senderEl.width          = settings.canvasWidth;
-			senderEl.height         = settings.canvasHeight;
+                senderEl.width = settings.canvasWidth;
+                senderEl.height = settings.canvasHeight;
 
-			receiverEl.width        = settings.canvasWidth;
-			receiverEl.height       = settings.canvasHeight;
+                receiverEl.width = settings.canvasWidth;
+                receiverEl.height = settings.canvasHeight;
 
-			videoEl.width           = settings.canvasWidth;
-			videoEl.height          = settings.canvasHeight;
+                videoEl.width = settings.canvasWidth;
+                videoEl.height = settings.canvasHeight;
 
+                if (!userMedia) {
+                    // damn, old browser :-(
+                    return alert('your browser is not supported');
+                }
 
-			// damn, old browser :-(
+                document.getElementById('message').innerHTML = 'Sending: ' + transferRate + ' KB / Sec<br />';
+                document.getElementById('message').innerHTML += 'Receiving: ' + transferRate + ' KB / Sec';
 
-			if (!navigator.webkitGetUserMedia) {
-				return false;
-			}
+                // the stream is ready
 
-			document.getElementById('message').innerHTML = 'Sending: ' + transferRate + ' KB / Sec<br />';
-			document.getElementById('message').innerHTML += 'Receiving: ' + transferRate + ' KB / Sec';
+                client.on('open', function (s) {
 
-			// the stream is ready
+                    stream = client.createStream(s, 'toserver');
 
-			client.on('open', function(s) {
+                    // data coming from the server...
+                    // we will draw it into the receiver canvas
+                });
 
-				stream = client.createStream(s, 'toserver');
+                client.on('stream', function (s, meta) {
 
-				// data coming from the server...
-				// we will draw it into the receiver canvas
-			});
+                    if (meta === 'fromserver') {
+                        s.on('data', function (data) {
 
-			client.on('stream', function(s, meta) {
+                            // data is from the type 'ArrayBuffer'
+                            // we need to build a Uint8Array out of it
+                            // to be able to access the actual data
 
-				if (meta === 'fromserver') {
-					s.on('data', function(data) {
+                            var dataArr = new Uint8Array(data);
 
-						// data is from the type 'ArrayBuffer'
-						// we need to build a Uint8Array out of it
-						// to be able to access the actual data
+                            for (var i = 0, len = dataArr.length; i < len; i++) {
+                                imageFrame.data[receiverPos] = dataArr[i];
+                                receiverPos++;
+                                if (receiverPos % receiverDataLength === 0) {
+                                    receiverPos = 0;
+                                    receiverContext.putImageData(imageFrame, 0, 0);
+                                }
+                            }
 
-						var dataArr = new Uint8Array(data);
+                        });
 
-						for (var i=0, len=dataArr.length; i<len; i++) {
-							imageFrame.data[receiverPos] = dataArr[i];
-							receiverPos++;
-							if (receiverPos % receiverDataLength === 0) {
-								receiverPos = 0;
-								receiverContext.putImageData(imageFrame,0,0);
-							}
-						}
+                    }
+                });
 
-					});
+                // gets called in an certain interval and grabs the current video frame
+                // and draws it into a canvas
 
-				}
-			});
+                var grabLoop = function () {
+                    try {
+                        senderContext.drawImage(videoEl, 0, 0, settings.canvasWidth, settings.canvasHeight);
+                    } catch (e) {}
 
-			// gets called in an certain interval and grabs the current video frame
-			// and draws it into a canvas
+                    var imageData = senderContext.getImageData(0, 0, settings.canvasWidth, settings.canvasHeight);
+                    if (typeof stream !== 'undefined') {
+                        stream.write(imageData.data);
+                    }
+                    setTimeout(grabLoop, settings.grabRate);
+                };
 
-			var grabLoop = function() {
-				senderContext.drawImage(videoEl,0,0,settings.canvasWidth,settings.canvasHeight);
-				var imageData = senderContext.getImageData(0,0,settings.canvasWidth,settings.canvasHeight);
-				if (typeof stream !== 'undefined') {
-					stream.write(imageData.data);
-				}
-				setTimeout(grabLoop, settings.grabRate);
-			};
+                // gets called as soon we have access to the camera..
 
-			// gets called as soon we have access to the camera..
+                var gUsuccess = function (stream) {
+                    videoEl.src = window.URL.createObjectURL(stream);
+                    videoEl.play();
+                    console.log('success');
+                    setTimeout(grabLoop, settings.grabRate);
+                };
 
-			var gUsuccess = function(stream) {
-				videoEl.src = window.webkitURL.createObjectURL(stream);
-				videoEl.play();
-				console.log('success');
-				setTimeout(grabLoop, settings.grabRate);
-			};
+                // no camera access...
 
-			// no camera access...
+                var gUfail = function () {
+                    console.log('no webcam access :-(');
+                };
 
-			var gUfail = function() {
-				console.log('no webcam access :-(');
-			};
+                userMedia({video: true}, gUsuccess, gUfail);
+            });
 
-			navigator.webkitGetUserMedia({video: true}, gUsuccess, gUfail);
-		});
+        })(document);
 
-	})(document);
-
-	</script>
+    </script>
 
 </head>
 <body>
-	<canvas id="sender"></canvas>
-	<canvas id="receiver"></canvas>
-	<video id="video" style="display:none;"></video>
-	<div id="message"></div>
+<canvas id="sender"></canvas>
+<canvas id="receiver"></canvas>
+<video id="video" style="display:none;"></video>
+<div id="message"></div>
 </body>
 </html>
