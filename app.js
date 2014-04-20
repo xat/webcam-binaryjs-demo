@@ -27,6 +27,7 @@ binaryServer.on('connection', function(client) {
       var responseStream = client.createStream('fromserver');
 
       // pipe didnt work :(
+
       stream.on('data', function(data) {
         responseStream.write(data);
       });
