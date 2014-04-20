@@ -7,13 +7,13 @@ navigator.getUserMedia.
 
 ### Installation
 
-´´´
+```
 git clone https://github.com/xat/webcam-binaryjs-demo.git
 cd webcam-binaryjs-demo
 npm install
-´´´
+```
 
 ### Run
 
-Start the Server with ´´´node app.js´´´ and navigate in your (chrome) browser to
+Start the Server with ```node app.js``` and navigate in your (chrome) browser to
 http://localhost:4000
